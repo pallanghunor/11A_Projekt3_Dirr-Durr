@@ -1,0 +1,62 @@
+body {
+  background-color: aquamarine;
+}
+
+#game {
+  width: 600px;
+  height: 600px;
+  background-color: #ccc;
+  position: relative;
+  margin: 0 auto;
+}
+
+#player1,
+#player2 {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  position: absolute;
+}
+
+#player1 {
+  background-color: #f00;
+  top: 0;
+  left: 0;
+}
+
+#player2 {
+  background-color: #f00;
+  top: 560px;
+  left: 560px;
+}
+
+.sand {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  background-color: #f4e842;
+}
+
+.wall {
+  width: 40px;
+  height: 40px;
+  background-color: #000;
+  position: absolute;
+}
+
+.square {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border: rgba(0, 0, 0, 0.1);
+  text-align: center;
+  font-size: 12px;
+}
+
+.bomb {
+  width: 20px;
+  height: 20px;
+  background-color: black;
+  border-radius: 50%;
+  position: absolute;
+}
