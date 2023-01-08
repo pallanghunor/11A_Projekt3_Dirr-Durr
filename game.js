@@ -1,11 +1,19 @@
 const game = document.getElementById("game");
+
 const player1 = document.getElementById("player1");
 const player1X = 0;
 const player1Y = 0;
+let player1Range = 1;
+
 const player2 = document.getElementById("player2");
 const player2X = 14;
 const player2Y = 14;
+let player2Range = 1;
+
 let squares;
+
+
+
 
 // Függvények
 function generateMap() {
@@ -82,7 +90,6 @@ function movePlayer(player, direction) {
       playerLeft < wall.offsetLeft + wall.offsetWidth &&
       playerTop + player.offsetHeight > wall.offsetTop &&
       playerTop < wall.offsetTop + wall.offsetHeight) {
-      console.log('Collides with wall!');
       collidesWithWall = true;
     }
   });
@@ -91,7 +98,6 @@ function movePlayer(player, direction) {
       playerLeft < sand.offsetLeft + sand.offsetWidth &&
       playerTop + player.offsetHeight > sand.offsetTop &&
       playerTop < sand.offsetTop + sand.offsetHeight) {
-      console.log('Collides with wall!');
       collidesWithWall = true;
     }
   });
@@ -108,7 +114,7 @@ function movePlayer(player, direction) {
   }
 }
 
-function placeBomb(player){
+function placeBomb(player, explosionRange) {
   let playerTop = player.offsetTop;
   let playerLeft = player.offsetLeft;
 
@@ -121,39 +127,67 @@ function placeBomb(player){
   game.appendChild(bomb);
 
   // After 3 seconds, explode the bomb
-  setTimeout(function() {
-    explodeBomb(bomb);
+  setTimeout(function () {
+    explodeBomb(bomb, explosionRange);
   }, 3000);
 }
 
-function explodeBomb(bomb) {
+function explodeBomb(bomb, explosionRange) {
   bomb.remove();
-  let explosionRange = 1;
 
   // Get the position of the bomb
   let bombX = parseInt(bomb.dataset.x);
   let bombY = parseInt(bomb.dataset.y);
 
-  
+
 
   // Get the coordinates of the squares next to the bomb
-  let squaresToRemove = [
-    [bombX, bombY - explosionRange], // square above the bomb
-    [bombX, bombY + explosionRange], // square below the bomb
-    [bombX - explosionRange, bombY], // square to the left of the bomb
-    [bombX + explosionRange, bombY] // square to the right of the bomb
-  ];
-
-  
-
-  // Remove the sand from the squares next to the bomb
-  squaresToRemove.forEach(function(coords) {
-    let square = document.querySelector(`[data-x='${coords[0]}'][data-y='${coords[1]}']`);
-    console.log(square);
-    if (square && square.classList.contains('sand')) {
-      square.classList.remove('sand');
+  let squaresToRemove = [];
+  for (let i = 1; i <= parseInt(explosionRange); i++) {
+    let topBlocked = false;
+    let bottomBlocked = false;
+    let leftBlocked = false;
+    let rightBlocked = false;
+    for (let j = 1; j <= i; j++) {
+      let topSquare = document.querySelector(`[data-x='${bombX}'][data-y='${bombY - j}']`);
+      if (topSquare && topSquare.classList.contains('wall')) {
+        topBlocked = true;
+      }
+      let bottomSquare = document.querySelector(`[data-x='${bombX}'][data-y='${bombY + j}']`);
+      if (bottomSquare && bottomSquare.classList.contains('wall')) {
+        bottomBlocked = true;
+      }
+      let leftSquare = document.querySelector(`[data-x='${bombX - j}'][data-y='${bombY}']`);
+      if (leftSquare && leftSquare.classList.contains('wall')) {
+        leftBlocked = true;
+      }
+      let rightSquare = document.querySelector(`[data-x='${bombX + j}'][data-y='${bombY}']`);
+      if (rightSquare && rightSquare.classList.contains('wall')) {
+        rightBlocked = true;
+      }
     }
-  });
+    if (!topBlocked) {
+      squaresToRemove.push([bombX, bombY - i]); // square above the bomb
+    }
+    if (!bottomBlocked) {
+      squaresToRemove.push([bombX, bombY + i]); // square below the bomb
+    }
+    if (!leftBlocked) {
+      squaresToRemove.push([bombX - i, bombY]); // square to the left of the bomb
+    }
+    if (!rightBlocked) {
+      squaresToRemove.push([bombX + i, bombY]); // square to the right of the bomb
+    }
+
+
+    // Remove the sand from the squares next to the bomb
+    squaresToRemove.forEach(function (coords) {
+      let square = document.querySelector(`[data-x='${coords[0]}'][data-y='${coords[1]}']`);
+      if (square && square.classList.contains('sand') && !square.classList.contains('wall')) {
+        square.classList.remove('sand');
+      }
+    });
+  }
 }
 
 document.addEventListener("keydown", function (event) {
@@ -173,10 +207,10 @@ document.addEventListener("keydown", function (event) {
     movePlayer(player2, "down");
   } else if (event.key == "ArrowRight") {
     movePlayer(player2, "right");
-  } else if (event.code == 'Space'){
-    placeBomb(player1);
-  } else if (event.key == "j"){
-    placeBomb(player2);
+  } else if (event.code == 'Space') {
+    placeBomb(player1, player1Range);
+  } else if (event.key == "j") {
+    placeBomb(player2, player2Range);
   }
 
 });
@@ -188,6 +222,4 @@ generateWall();
 generateSand();
 removeSand(player1X, player1Y);
 removeSand(player2X, player2Y);
-
-
 
