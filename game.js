@@ -3,7 +3,7 @@ const game = document.getElementById("game");
 const player1 = document.getElementById("player1");
 const player1X = 0;
 const player1Y = 0;
-let player1Range = 1;
+let player1Range = 3;
 
 const player2 = document.getElementById("player2");
 const player2X = 14;
@@ -11,7 +11,8 @@ const player2Y = 14;
 let player2Range = 1;
 
 let squares;
-
+let lastTime = 0; // variable to keep track of the time of the last frame
+let moving = false;
 
 
 
@@ -26,7 +27,7 @@ function generateMap() {
       square.setAttribute("data-y", j);
       square.style.top = (i * 40) + "px";
       square.style.left = (j * 40) + "px";
-      square.textContent = `(${i}, ${j})`;
+      // square.textContent = `(${i}, ${j})`;
       game.appendChild(square);
     }
   }
@@ -39,7 +40,7 @@ function generateWall() {
     for (let j = 1; j < 15; j++) {
       const square = squares[i * 15 + j];
       if (!square) continue; // skip if square is null or undefined
-      if (i % 2 === 1 && j % 2 === 1) {
+      if (i % 2 == 1 && j % 2 == 1) {
         square.classList.add("wall"); // add "wall" class
       }
     }
@@ -71,13 +72,13 @@ function movePlayer(player, direction) {
   let playerLeft = player.offsetLeft;
 
   // Update the position based on the direction
-  if (direction === "up") {
+  if (direction == "up") {
     playerTop -= 40;
-  } else if (direction === "down") {
+  } else if (direction == "down") {
     playerTop += 40;
-  } else if (direction === "left") {
+  } else if (direction == "left") {
     playerLeft -= 40;
-  } else if (direction === "right") {
+  } else if (direction == "right") {
     playerLeft += 40;
   }
 
@@ -140,7 +141,7 @@ function explodeBomb(bomb, explosionRange) {
   let bombY = parseInt(bomb.dataset.y);
 
 
-
+  
   // Get the coordinates of the squares next to the bomb
   let squaresToRemove = [];
   for (let i = 1; i <= parseInt(explosionRange); i++) {
@@ -192,20 +193,28 @@ function explodeBomb(bomb, explosionRange) {
 
 document.addEventListener("keydown", function (event) {
   if (event.key == "w") {
+    moving = true;
     movePlayer(player1, "up");
   } else if (event.key == "a") {
+    moving = true;
     movePlayer(player1, "left");
   } else if (event.key == "s") {
+    moving = true;
     movePlayer(player1, "down");
   } else if (event.key == "d") {
+    moving = true;
     movePlayer(player1, "right");
   } else if (event.key == "ArrowUp") {
+    moving = true;
     movePlayer(player2, "up");
   } else if (event.key == "ArrowLeft") {
+    moving = true;
     movePlayer(player2, "left");
   } else if (event.key == "ArrowDown") {
+    moving = true;
     movePlayer(player2, "down");
   } else if (event.key == "ArrowRight") {
+    moving = true;
     movePlayer(player2, "right");
   } else if (event.code == 'Space') {
     placeBomb(player1, player1Range);
