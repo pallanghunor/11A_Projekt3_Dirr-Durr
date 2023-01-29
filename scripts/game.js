@@ -4,6 +4,11 @@ class Player {
     this.y = y;
     this.image = image;
     this.speed = speed;
+    this.bombPlaced = false;
+    this.bombX = -1;
+    this.bombY = -1;
+    this.bombRadius = 100;
+    this.bombTimer = 3000;
   }
 
 
@@ -31,6 +36,58 @@ class Player {
     }
   }
 
+  placeBomb(){
+    if (!this.bombPlaced) {
+      let block1X = 0;
+      let block1Y = 0;
+      let block2X = 0;
+      let block2Y = 0;
+      block1X = Math.floor(this.x / 40);
+      block1Y = Math.floor(this.y / 40);
+      block2X = Math.floor((this.x + 39) / 40);
+      block2Y = Math.floor((this.y + 39) / 40);
+      console.log(`player: ${this.x}:${this.y}`);
+      console.log(`block1: ${block1X}:${block1Y}`);
+      console.log(`block2: ${block2X}:${block2Y}`);
+      if (block1Y == block2Y && block1X != block2X) {
+        if (((block1X + 1)* 40) - this.x > (this.x + 40) - (((block2X + 1)* 40) - 40)) {
+          this.bombX = block1X;
+          this.bombY = block1Y;
+        } else {
+          this.bombX = block2X;
+          this.bombY = block2Y;
+        }
+      } else if(block1X == block2X && block1Y != block2Y) {
+        if (((block1Y + 1)* 40) - this.y > (this.y + 40) - (((block2Y + 1)* 40) - 40)) {
+          this.bombX = block1X;
+          this.bombY = block1Y;
+        } else {
+          this.bombX = block2X;
+          this.bombY = block2Y;
+        }
+      } else {
+        this.bombX = block1X;
+        this.bombY = block1Y;
+      }
+      console.log(this.bombX, this.bombY);
+      // this.bombPlaced = true;
+      setTimeout(() => {
+      }, this.bombTimer);
+    }
+  }
+
+  bombExplode() {
+    for (let i = 0; i < map.length; i++) {
+      for (let j = 0; j < map[i].length; j++) {
+        let distance = Math.sqrt(Math.pow(i - this.bombX, 2) + Math.pow(j - this.bombY, 2));
+        if (distance <= this.bombRadius) {
+          map[i][j] = "0";
+        }
+      }
+    }
+    this.bombPlaced = false;
+  }
+
   draw(){
     ctx.drawImage(this.image, this.x + mapXStart, this.y);
   }
@@ -47,6 +104,9 @@ class Player {
     }
     if (keys.d.pressed) {
       this.moveRight();
+    }
+    if (keys.space.pressed && !this.bombPlaced) {
+      this.placeBomb();
     }
     this.draw();
   }
@@ -66,8 +126,8 @@ let mapHeight = 600;
 
 
 let player1Image = new Image();
-player1Image.src = "./img/character.png"
-let player1 = new Player(0, 0, player1Image, 2);
+player1Image.src = "./img/character.png";
+let player1 = new Player(0, 0, player1Image, 1);
 
 let player2Image = new Image();
 player2Image.src = "./img/character.png"
@@ -87,6 +147,9 @@ const keys = {
   d: {
     pressed: false
   },
+  space: {
+    pressed: false
+  }
 }
 
 function init() {
@@ -170,11 +233,10 @@ function isColliding(playerX, playerY) {
   const xEnd = Math.floor((playerX + 39) / 40);
   const yEnd = Math.floor((playerY + 39) / 40);
   if (map[yStart][xStart] == "wall" || map[yEnd][xEnd] == "wall" || map[yEnd][xStart] == "wall" || map[yStart][xEnd] == "wall") {
-    console.log("Collision with wall!");
     return true;
   }
   else if (map[yStart][xStart] == "sand" || map[yEnd][xEnd] == "sand" || map[yEnd][xStart] == "sand" || map[yStart][xEnd] == "sand"){
-    return true;
+    return false;
   }
   return false;
 }
@@ -193,6 +255,9 @@ window.addEventListener('keydown', (e) => {
     case 'd':
       keys.d.pressed = true;
       break;
+    case ' ':
+      keys.space.pressed = true;
+      break;
   }
 });
 
@@ -209,6 +274,9 @@ window.addEventListener('keyup', (e) => {
       break;
     case 'd':
       keys.d.pressed = false;
+      break;
+    case ' ':
+      keys.space.pressed = false;
       break;
   }
 });
