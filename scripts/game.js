@@ -1,5 +1,6 @@
 class Player {
-  constructor({player, x, y, image, speed, sprites}) {
+  constructor({ player, x, y, image, speed, sprites }) {
+    this.health = 3; 
     this.image = image;
     this.sprites = sprites;
     this.frameWidth = 0;
@@ -11,9 +12,7 @@ class Player {
     this.moving = false;
     this.animationSpeed = 10;
     this.speed = speed;
-    this.bombImage = new Image();
-    this.bombImage.src = './img/dirr_durr_bomba1.png';
-    this.bomb = new Bomb(3);
+    this.bomb = new Bomb(1);
   }
 
 
@@ -58,14 +57,14 @@ class Player {
       if (frames % this.animationSpeed == 0) {
         if (this.frameWidth < 3) {
           this.frameWidth++;
-        } else{
+        } else {
           this.frameWidth = 0;
         }
       }
     }
     ctx.drawImage(this.image, this.frameWidth * this.playerWidth, 0, this.playerWidth, this.playerHeight,
-                  this.x + mapXStart, this.y + mapYStart - this.playerHeight + 40,
-                  this.playerWidth, this.playerHeight);
+      this.x + mapXStart, this.y + mapYStart - this.playerHeight + 40,
+      this.playerWidth, this.playerHeight);
 
   }
 
@@ -114,7 +113,7 @@ class Player {
 }
 
 class Bomb {
-  constructor(explosionRange, bombImage) {
+  constructor(explosionRange) {
     this.x = 0;
     this.y = 0;
     this.bombPlaced = false;
@@ -123,12 +122,14 @@ class Bomb {
     this.bombTimer = 3000;
     this.bombRange = explosionRange;
     this.bombImage = new Image();
-    this.bombImage.src = './img/dirr_durr_bomba1.png';
+    this.bombImage.src = './img/bomb.png';
+    this.frameWidth = 5;
   }
 
   placeBomb(playerX, playerY, playerHeight, playerWidth) {
     if (!this.bombPlaced) {
       this.bombPlaced = true;
+      this.frameWidth = 0;
       this.x = playerX;
       this.y = playerY;
       let block1X = 0;
@@ -164,14 +165,28 @@ class Bomb {
         this.bombY = block1Y;
       }
       // console.log(this.bombX, this.bombY);
-      ctx.drawImage(this.bombImage, this.bombX * 40 + mapXStart, this.bombY * 40 + mapYStart);
       setTimeout(() => {
         this.bombExplode();
       }, this.bombTimer);
     }
   }
 
-  bombExplode(){
+  bombExplode() {
+    const player1Pos = {x: player1.x, y: player1.y};
+    const player2Pos = {x: player2.x, y: player2.y};
+    let p1Block1 = {x: Math.floor(player1Pos.x / 40), y: Math.floor(player1Pos.y / 40)};
+    let p1Block2 = {x: Math.floor((player1Pos.x + player1.playerWidth - 1) / 40), y: Math.floor((player1Pos.y + player1.playerHeight - (player1.playerHeight - 40) - 1) / 40)};
+    let p2Block1 = {x: Math.floor(player2Pos.x / 40), y: Math.floor(player2Pos.y / 40)};
+    let p2Block2 = {x: Math.floor((player2Pos.x + player2.playerWidth - 1) / 40), y: Math.floor((player2Pos.y + player2.playerHeight - (player2.playerHeight - 40) - 1) / 40)};
+    console.log(`player1: ${p1Block1.x};${p1Block1.y}\t${p1Block2.x};${p1Block2.y}`);
+    console.log(`player2: ${p2Block1.x};${p2Block1.y}\t${p2Block2.x};${p2Block2.y}`);
+    console.log(`bombLeft: ${this.bombX  - 1};${this.bombY}`);
+    console.log(`bombRight: ${this.bombX + 1};${this.bombY}`);
+    console.log(`bombTop: ${this.bombX};${this.bombY - 1}`);
+    console.log(`bombBottom: ${this.bombX};${this.bombY + 1}`);
+
+    let explosionUpStart = {x: this.bombX, y: this.bombY};
+    let explosionUpEnd = {x: this.bombX, y: this.bombY};
     for (let i = 1; i <= this.bombRange; i++) {
       if (this.bombY - i < 0) {
         break;
@@ -182,10 +197,20 @@ class Bomb {
         } else if (topSquare == 'sand') {
           map[this.bombY - i][this.bombX] = '0';
           break;
+        } 
+        explosionUpEnd = {x: this.bombX, y: this.bombY - i};
+        if (this.bombY - i == p1Block1.y && this.bombX == p1Block1.x || this.bombY - i == p1Block2.y && this.bombX == p1Block2.x){
+          player1.health -= 1;
+          break;
+        } else if (this.bombY - i == p2Block1.y && this.bombX == p2Block1.x || this.bombY - i == p2Block2.y && this.bombX == p2Block2.x){
+          player2.health -= 1;
+          break;
         }
       }
     }
 
+    let explosionBottomStart = {x: this.bombX, y: this.bombY};
+    let explosionBottomEnd = {x: this.bombX, y: this.bombY};
     for (let i = 1; i <= this.bombRange; i++) {
       if (this.bombY + i > 14) {
         break;
@@ -197,9 +222,20 @@ class Bomb {
           map[this.bombY + i][this.bombX] = '0';
           break;
         }
+        
+        explosionBottomEnd = {x: this.bombX, y: this.bombY + i};
+        if (this.bombY + i == p1Block1.y && this.bombX == p1Block1.x || this.bombY + i == p1Block2.y && this.bombX == p1Block2.x){
+          player1.health -= 1;
+          break;
+        } else if (this.bombY + i == p2Block1.y && this.bombX == p2Block1.x || this.bombY + i == p2Block2.y && this.bombX == p2Block2.x){
+          player2.health -= 1;
+          break;
+        }
       }
     }
 
+    let explosionLeftStart = {x: this.bombX, y: this.bombY};
+    let explosionLeftEnd = {x: this.bombX, y: this.bombY};
     for (let i = 1; i <= this.bombRange; i++) {
       if (this.bombX - i < 0) {
         break;
@@ -207,13 +243,24 @@ class Bomb {
         let leftSquare = map[this.bombY][this.bombX - i];
         if (leftSquare == undefined || leftSquare == 'wall') {
           break;
-        } else if (leftSquare == 'sand'){
+        } else if (leftSquare == 'sand') {
           map[this.bombY][this.bombX - i] = '0';
+          break;
+        }
+        
+        explosionLeftEnd = {x: this.bombX - i, y: this.bombY};
+        if (this.bombY == p1Block1.y && this.bombX - 1 == p1Block1.x || this.bombY == p1Block2.y && this.bombX - 1 == p1Block2.x){
+          player1.health -= 1;
+          break;
+        } else if (this.bombY == p2Block1.y && this.bombX - 1 == p2Block1.x || this.bombY == p2Block2.y && this.bombX - 1 == p2Block2.x){
+          player2.health -= 1;
           break;
         }
       }
     }
 
+    let explosionRightStart = {x: this.bombX, y: this.bombY};
+    let explosionRightEnd = {x: this.bombX, y: this.bombY};
     for (let i = 1; i <= this.bombRange; i++) {
       if (this.bombX + i > 14) {
         break;
@@ -221,21 +268,44 @@ class Bomb {
         let rightSquare = map[this.bombY][this.bombX + i];
         if (rightSquare == undefined || rightSquare == 'wall') {
           break;
-        } else if (rightSquare == 'sand'){ 
+        } else if (rightSquare == 'sand') {
           map[this.bombY][this.bombX + i] = '0';
+          break;
+        }
+        
+        explosionRightEnd = {x: this.bombX + i, y: this.bombY};
+        if (this.bombY == p1Block1.y && this.bombX + 1 == p1Block1.x || this.bombY == p1Block2.y && this.bombX + 1 == p1Block2.x){
+          player1.health -= 1;
+          break;
+        } else if (this.bombY == p2Block1.y && this.bombX + 1 == p2Block1.x || this.bombY == p2Block2.y && this.bombX + 1 == p2Block2.x){
+          player2.health -= 1;
           break;
         }
       }
     }
+    console.log(`player1: ${player1.health}\nplayer2: ${player2.health}`);
     this.bombPlaced = false;
   }
 
-  draw(){
-    ctx.drawImage(this.bombImage, (this.bombX * 40) + mapXStart, this.bombY * 40 + mapYStart);
+  draw() {
+    ctx.drawImage(this.bombImage,
+      this.frameWidth * 40,
+      0,
+      40,
+      40,
+      (this.bombX * 40) + mapXStart,
+      (this.bombY * 40) + mapYStart,
+      40,
+      40);
   }
 
-  update(){
+  update() {
     if (this.bombPlaced == true) {
+      if (frames % 30 == 0) {
+        if (this.frameWidth < 5) {
+          this.frameWidth++;
+        }
+      }
       this.draw();
     }
   }
@@ -253,63 +323,76 @@ let map = Array(15).fill("0").map(() => Array(15).fill("0"));
 let mapWidth = 600;
 let mapHeight = 600;
 
-let player1SelectedCharachter = "01";
-let player1DownImage = new Image();
-player1DownImage.src = `./img/characters/${player1SelectedCharachter}/playerDown.png`;
+{
+  let player1SelectedCharachter = "01";
+  let player1DownImage = new Image();
+  player1DownImage.src = `./img/characters/${player1SelectedCharachter}/playerDown.png`;
 
-let player1UpImage = new Image();
-player1UpImage.src = `./img/characters/${player1SelectedCharachter}/playerUp.png`;
+  let player1UpImage = new Image();
+  player1UpImage.src = `./img/characters/${player1SelectedCharachter}/playerUp.png`;
 
-let player1LeftImage = new Image();
-player1LeftImage.src = `./img/characters/${player1SelectedCharachter}/playerLeft.png`;
+  let player1LeftImage = new Image();
+  player1LeftImage.src = `./img/characters/${player1SelectedCharachter}/playerLeft.png`;
 
-let player1RightImage = new Image();
-player1RightImage.src = `./img/characters/${player1SelectedCharachter}/playerRight.png`;
-console.log(player1RightImage);
+  let player1RightImage = new Image();
+  player1RightImage.src = `./img/characters/${player1SelectedCharachter}/playerRight.png`;
 
+  var player1 = new Player({
+    player: 1,
+    x: 5,
+    y: 0,
+    image: player1DownImage,
+    speed: 2,
+    sprites: {
+      up: player1UpImage,
+      left: player1LeftImage,
+      right: player1RightImage,
+      down: player1DownImage
+    }
+  });
 
-let player1 = new Player({
-  player: 1,
-  x: 0, 
-  y: 0,
-  image: player1DownImage, 
-  speed: 2,
-  sprites: {
-    up: player1UpImage,
-    left: player1LeftImage,
-    right: player1RightImage,
-    down: player1DownImage
+  let player2SelectedCharachter = "01";
+
+  let player2DownImage = new Image();
+  player2DownImage.src = `./img/characters/${player2SelectedCharachter}/playerDown.png`;
+
+  let player2UpImage = new Image();
+  player2UpImage.src = `./img/characters/${player2SelectedCharachter}/playerUp.png`;
+
+  let player2LeftImage = new Image();
+  player2LeftImage.src = `./img/characters/${player2SelectedCharachter}/playerLeft.png`;
+
+  let player2RightImage = new Image();
+  player2RightImage.src = `./img/characters/${player2SelectedCharachter}/playerRight.png`;
+
+  var player2 = new Player({
+    player: 2,
+    x: 565,
+    y: 560,
+    image: player2DownImage,
+    speed: 2,
+    sprites: {
+      up: player2UpImage,
+      left: player2LeftImage,
+      right: player2RightImage,
+      down: player2DownImage
+    }
+  });
+
+  function Loading() {
+    window.onload;
+    player1DownImage.onload;
+    player1UpImage.onload;
+    player1DownImage.onload;
+    player1LeftImage.onload;
+  
+    player2DownImage.onload;
+    player2UpImage.onload;
+    player2LeftImage.onload;
+    player2RightImage.onload;
+    init();
   }
-});
-
-let player2SelectedCharachter = "01";
-
-let player2DownImage = new Image();
-player2DownImage.src = `./img/characters/${player2SelectedCharachter}/playerDown.png`;
-
-let player2UpImage = new Image();
-player2UpImage.src = `./img/characters/${player2SelectedCharachter}/playerUp.png`;
-
-let player2LeftImage = new Image();
-player2LeftImage.src = `./img/characters/${player2SelectedCharachter}/playerLeft.png`;
-
-let player2RightImage = new Image();
-player2RightImage.src = `./img/characters/${player2SelectedCharachter}/playerRight.png`;
-
-let player2 = new Player({
-  player: 2,
-  x: 0, 
-  y: 0,
-  image: player2DownImage, 
-  speed: 2,
-  sprites: {
-    up: player2UpImage,
-    left: player2LeftImage,
-    right: player2RightImage,
-    down: player2DownImage
-  }
-});
-
+}
 
 const keys = {
   w: {
@@ -345,19 +428,6 @@ const keys = {
 }
 Loading();
 
-function Loading(){
-  window.onload;
-  player1DownImage.onload;
-  player1UpImage.onload;
-  player1DownImage.onload;
-  player1LeftImage.onload;
-
-  player2DownImage.onload;
-  player2UpImage.onload;
-  player2LeftImage.onload;
-  player2RightImage.onload;
-  init();
-}
 
 function init() {
   generateWall();
@@ -369,10 +439,12 @@ function init() {
 function gameLoop() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawMap();
-  player1.update();
   player1.bomb.update();
+  player1.update();
+  player2.bomb.update();
+  player2.update();
   frames++;
-} setInterval(gameLoop , 1000/ 60)
+} setInterval(gameLoop, 1000 / 60)
 
 function generateWall() {
   for (let i = 1; i < 15; i++) {
@@ -384,13 +456,16 @@ function generateWall() {
   }
 }
 
-function isblockNextToPlayer(i, j) {
-  player2X = player2.x / 40;
-  player2Y = player2.y / 40;
-  if (i == player1.x && j == player1.y || i == player1.x + 1 && j == player1.y || i == player1.x && j == player1.y + 1) {
+function isblockNextToPlayer(x, y) {
+  player1X = Math.floor(player1.x / 40); // 2
+  player1Y = Math.floor(player1.y / 40); // 0
+  player2X = Math.floor(player2.x / 40);
+  player2Y = Math.floor(player2.y / 40);
+  if (x == player1X && y == player1Y || x == player1X + 1 && y == player1Y || x == player1X && y == player1Y + 1 || x == player1X - 1 && y == player1Y || x == player1X && y == player1Y - 1) {
     return true;
   }
-  else if (i == player2X && j == player2Y || i == player2X - 1 && j == player2Y || i == player2X && j == player2Y - 1) {
+  else if (x == player2X && y == player2Y || x == player2X - 1 && y == player2Y || x == player2X && y == player2Y - 1 || x == player2X + 1 && y == player2Y || x == player2X && y == player2Y + 1) {
+
     return true;
   }
 }
@@ -399,7 +474,7 @@ function generateSand() {
   for (let i = 0; i < 15; i++) {
     for (let j = 0; j < 15; j++) {
       if (Math.random() < 0.8 && !(i % 2 == 1 && j % 2 == 1)) {
-        if (!isblockNextToPlayer(i, j)) {
+        if (!isblockNextToPlayer(j, i)) {
           map[i][j] = "sand";
         }
       }
@@ -410,6 +485,8 @@ function generateSand() {
 function drawMap() {
   for (let i = 0; i < map.length; i++) {
     for (let j = 0; j < map[i].length; j++) {
+      ctx.fillStyle = "beige";
+      ctx.fillRect(j * 40 + mapXStart, i * 40 + mapYStart, 40, 40);
       switch (map[i][j]) {
         case 'sand':
           ctx.fillStyle = "yellow";
@@ -417,10 +494,6 @@ function drawMap() {
           break;
         case 'wall':
           ctx.fillStyle = "black";
-          ctx.fillRect(j * 40 + mapXStart, i * 40 + mapYStart, 40, 40);
-          break;
-        case '0':
-          ctx.fillStyle = "beige";
           ctx.fillRect(j * 40 + mapXStart, i * 40 + mapYStart, 40, 40);
           break;
       }
@@ -431,7 +504,7 @@ function drawMap() {
 function isInsideMap(playerX, playerY, playerWidth, playerHeight) {
   const x = playerX + mapXStart;
   const y = playerY + mapYStart;
-  if (x < mapXStart || x + playerWidth > mapXStart + mapWidth || y < mapYStart || y + playerHeight > mapYStart + mapHeight) {
+  if (x < mapXStart || x + playerWidth > mapXStart + mapWidth || y +1  < mapYStart || y + playerHeight - (playerHeight - 40) > mapYStart + mapHeight) {
     return false;
   }
   return true;
@@ -442,6 +515,10 @@ function isColliding(playerX, playerY, playerWidth, playerHeight) {
   const yStart = Math.floor((playerY + (playerHeight - 40)) / 40);
   const xEnd = Math.floor((playerX + playerWidth - 1) / 40);
   const yEnd = Math.floor((playerY + playerHeight - (playerHeight - 40) - 1) / 40);
+  const block1X = Math.floor(playerX / 40);
+  const block1Y = Math.floor(playerY / 40);
+  const block2X = Math.floor((playerX + playerWidth - 1) / 40);
+  const block2Y = Math.floor((playerY + playerHeight - (playerHeight - 40) - 1) / 40);
   if (map[yStart][xStart] == "wall" || map[yEnd][xEnd] == "wall" || map[yEnd][xStart] == "wall" || map[yStart][xEnd] == "wall") {
     return true;
   }
