@@ -1,3 +1,3 @@
 # 11A_Projekt3_Dirr-Durr
 
-Névsor: Pallang Hunor, Bencze Sára, Bányai Bence
+Névsor: Pallang Hunor, Bányai Bence, Bencze Sára
