@@ -1,25 +1,30 @@
+// BUG: Ha teljesen a bombán állsz no damage
+
 class Player {
   constructor({ player, x, y, image, speed, sprites }) {
-    this.health = 3; 
+    this.health = 3;
+    this.imageAvatar = image;
     this.image = image;
     this.sprites = sprites;
     this.frameWidth = 0;
-    this.playerWidth = this.image.width / 4;
-    this.playerHeight = this.image.height;
+    this.imageRatio = (this.image.width / 4) / this.image.height;
+    this.playerHeight = 45;
+    this.playerWidth = (43 * this.imageRatio) + 1;
     this.player = player;
     this.x = x;
     this.y = y;
     this.moving = false;
     this.animationSpeed = 10;
     this.speed = speed;
-    this.bomb = new Bomb(1);
+
+    this.bomb = new Bomb(2);
   }
 
 
   moveUp() {
     this.moving = true;
     this.image = this.sprites.up;
-    if (isInsideMap(this.x, this.y - this.speed, this.playerWidth, this.playerHeight) && !isColliding(this.x, this.y - this.speed, this.playerWidth, this.playerHeight)) {
+    if (isInsideMap(this.x, this.y - this.speed, this.playerWidth, this.playerHeight) && !isColliding(this.x, this.y - this.speed, this.playerWidth, this.playerHeight, this.player)) {
       this.y -= this.speed;
     }
   }
@@ -27,7 +32,7 @@ class Player {
   moveLeft() {
     this.moving = true;
     this.image = this.sprites.left;
-    if (isInsideMap(this.x - this.speed, this.y, this.playerWidth, this.playerHeight) && !isColliding(this.x - this.speed, this.y, this.playerWidth, this.playerHeight)) {
+    if (isInsideMap(this.x - this.speed, this.y, this.playerWidth, this.playerHeight) && !isColliding(this.x - this.speed, this.y, this.playerWidth, this.playerHeight, this.player)) {
       this.x -= this.speed;
     }
   }
@@ -35,7 +40,7 @@ class Player {
   moveDown() {
     this.moving = true;
     this.image = this.sprites.down;
-    if (isInsideMap(this.x, this.y + this.speed, this.playerWidth, this.playerHeight) && !isColliding(this.x, this.y + this.speed, this.playerWidth, this.playerHeight)) {
+    if (isInsideMap(this.x, this.y + this.speed, this.playerWidth, this.playerHeight) && !isColliding(this.x, this.y + this.speed, this.playerWidth, this.playerHeight, this.player)) {
       this.y += this.speed;
     }
   }
@@ -43,7 +48,7 @@ class Player {
   moveRight() {
     this.moving = true;
     this.image = this.sprites.right;
-    if (isInsideMap(this.x + this.speed, this.y, this.playerWidth, this.playerHeight) && !isColliding(this.x + this.speed, this.y, this.playerWidth, this.playerHeight)) {
+    if (isInsideMap(this.x + this.speed, this.y, this.playerWidth, this.playerHeight) && !isColliding(this.x + this.speed, this.y, this.playerWidth, this.playerHeight, this.player)) {
       this.x += this.speed;
     }
   }
@@ -62,7 +67,7 @@ class Player {
         }
       }
     }
-    ctx.drawImage(this.image, this.frameWidth * this.playerWidth, 0, this.playerWidth, this.playerHeight,
+    ctx.drawImage(this.image, this.frameWidth * (this.image.width / 4), 0, this.image.width / 4, this.image.height,
       this.x + mapXStart, this.y + mapYStart - this.playerHeight + 40,
       this.playerWidth, this.playerHeight);
 
@@ -82,7 +87,7 @@ class Player {
       if (keys.d.pressed) {
         this.moveRight();
       }
-      if (keys.space.pressed && !this.bomb.bombPlaced) {
+      if (keys.space.pressed && !this.bomb.bomb.placed) {
         this.placeBomb();
       }
       if (!keys.w.pressed && !keys.a.pressed && !keys.s.pressed && !keys.d.pressed) {
@@ -101,7 +106,7 @@ class Player {
       if (keys.arrowRight.pressed) {
         this.moveRight();
       }
-      if (keys.e.pressed && !this.bomb.bombPlaced) {
+      if (keys.e.pressed && !this.bomb.bomb.placed) {
         this.placeBomb();
       }
       if (!keys.arrowUp.pressed && !keys.arrowLeft.pressed && !keys.arrowDown.pressed && !keys.arrowRight.pressed) {
@@ -114,214 +119,369 @@ class Player {
 
 class Bomb {
   constructor(explosionRange) {
-    this.x = 0;
-    this.y = 0;
-    this.bombPlaced = false;
-    this.bombX = -1;
-    this.bombY = -1;
-    this.bombTimer = 3000;
-    this.bombRange = explosionRange;
-    this.bombImage = new Image();
-    this.bombImage.src = './img/bomb.png';
-    this.frameWidth = 5;
+    this.player = {
+      x: 0,
+      y: 0,
+    }
+    this.bomb = {
+      x: -1,
+      y: -1,
+      placed: false,
+      explosion: false,
+      timer: 3000, // milliseconds
+      range: explosionRange,
+      image: new Image(),
+      frame: 1,
+      imgFrameWidth: 0
+    }
+    this.bomb.image.src = './img/bomb/bomb.png';
+    this.explosion = {
+      start: {
+        x: 0,
+        y: 0,
+      },
+      topEnd: {
+        x: 0,
+        y: 0,
+      },
+      bottomEnd: {
+        x: 0,
+        y: 0,
+      },
+      rightEnd: {
+        x: 0,
+        y: 0,
+      },
+      leftEnd: {
+        x: 0,
+        y: 0,
+      },
+      frame: 0,
+      imgFrameWidth: 0,
+    }
   }
 
   placeBomb(playerX, playerY, playerHeight, playerWidth) {
-    if (!this.bombPlaced) {
-      this.bombPlaced = true;
-      this.frameWidth = 0;
-      this.x = playerX;
-      this.y = playerY;
+    if (!this.bomb.placed) {
+      this.bomb.placed = true;
+      this.bomb.imgFrameWidth = 0;
+      this.player.x = playerX;
+      this.player.y = playerY + (playerHeight - 40) - 1;
       let block1X = 0;
       let block1Y = 0;
       let block2X = 0;
       let block2Y = 0;
-      block1X = Math.floor(this.x / 40);
-      block1Y = Math.floor(this.y / 40);
-      block2X = Math.floor((this.x + playerWidth - 1) / 40);
-      block2Y = Math.floor((this.y + playerHeight - (playerHeight - 40) - 1) / 40);
+      block1X = Math.floor(this.player.x / 40);
+      block1Y = Math.floor(this.player.y / 40);
+      block2X = Math.floor((this.player.x + playerWidth - 1) / 40);
+      block2Y = Math.floor((this.player.y + (40 - (playerHeight - 40) - 1)) / 40);
       // console.log(playerX, playerY);
-      // console.log(`player: ${this.x}:${this.y}`);
+      // console.log(`player: ${this.player.x}:${this.player.y}`);
       // console.log(`block1: ${block1X}:${block1Y}`);
       // console.log(`block2: ${block2X}:${block2Y}`);
       if (block1Y == block2Y && block1X != block2X) {
-        if (((block1X + 1) * 40) - this.x > (this.x + playerWidth) - (((block2X + 1) * 40) - 40)) {
-          this.bombX = block1X;
-          this.bombY = block1Y;
+        if (((block1X + 1) * 40) - this.player.x > (this.player.x + playerWidth) - (((block2X + 1) * 40) - 40)) {
+          this.bomb.x = block1X;
+          this.bomb.y = block1Y;
         } else {
-          this.bombX = block2X;
-          this.bombY = block2Y;
+          this.bomb.x = block2X;
+          this.bomb.y = block2Y;
         }
       } else if (block1X == block2X && block1Y != block2Y) {
-        if (((block1Y + 1) * 40) - this.y > (this.y + playerHeight) - (((block2Y + 1) * 40) - 40)) {
-          this.bombX = block1X;
-          this.bombY = block1Y;
+        if (((block1Y + 1) * 40) - this.player.y + (this.player.y / 2) > (this.player.y + (this.player.y / 2) + playerHeight) - (((block2Y + 1) * 40) - 40)) {
+          this.bomb.x = block1X;
+          this.bomb.y = block1Y;
         } else {
-          this.bombX = block2X;
-          this.bombY = block2Y;
+          this.bomb.x = block2X;
+          this.bomb.y = block2Y;
         }
       } else {
-        this.bombX = block1X;
-        this.bombY = block1Y;
+        this.bomb.x = block1X;
+        this.bomb.y = block1Y;
       }
-      // console.log(this.bombX, this.bombY);
+      // console.log(this.bomb.x, this.bomb.y);
+      // map[this.bomb.y][this.bomb.x] = "bomb";
+      // console.log(map);
       setTimeout(() => {
         this.bombExplode();
-      }, this.bombTimer);
+      }, this.bomb.timer);
     }
   }
 
   bombExplode() {
-    const player1Pos = {x: player1.x, y: player1.y};
-    const player2Pos = {x: player2.x, y: player2.y};
-    let p1Block1 = {x: Math.floor(player1Pos.x / 40), y: Math.floor(player1Pos.y / 40)};
-    let p1Block2 = {x: Math.floor((player1Pos.x + player1.playerWidth - 1) / 40), y: Math.floor((player1Pos.y + player1.playerHeight - (player1.playerHeight - 40) - 1) / 40)};
-    let p2Block1 = {x: Math.floor(player2Pos.x / 40), y: Math.floor(player2Pos.y / 40)};
-    let p2Block2 = {x: Math.floor((player2Pos.x + player2.playerWidth - 1) / 40), y: Math.floor((player2Pos.y + player2.playerHeight - (player2.playerHeight - 40) - 1) / 40)};
-    console.log(`player1: ${p1Block1.x};${p1Block1.y}\t${p1Block2.x};${p1Block2.y}`);
-    console.log(`player2: ${p2Block1.x};${p2Block1.y}\t${p2Block2.x};${p2Block2.y}`);
-    console.log(`bombLeft: ${this.bombX  - 1};${this.bombY}`);
-    console.log(`bombRight: ${this.bombX + 1};${this.bombY}`);
-    console.log(`bombTop: ${this.bombX};${this.bombY - 1}`);
-    console.log(`bombBottom: ${this.bombX};${this.bombY + 1}`);
+    const player1Pos = { x: player1.x, y: player1.y };
+    const player2Pos = { x: player2.x, y: player2.y };
+    let p1Block1 = {
+      x: Math.floor((player1Pos.x + 10) / 40),
+      y: Math.floor((player1Pos.y + 10) / 40)
+    };
+    let p1Block2 = {
+      x: Math.floor((player1Pos.x + player1.playerWidth - 1 - 10) / 40),
+      y: Math.floor((player1Pos.y + player1.playerHeight - (player1.playerHeight - 40) - 1 - 10) / 40)
+    };
+    let p2Block1 = {
+      x: Math.floor((player2Pos.x + 10) / 40),
+      y: Math.floor((player2Pos.y + 10) / 40)
+    };
+    let p2Block2 = {
+      x: Math.floor((player2Pos.x + player2.playerWidth - 1 - 10) / 40),
+      y: Math.floor((player2Pos.y + player2.playerHeight - (player2.playerHeight - 40) - 1 - 10) / 40)
+    };
+    // console.log(`player1: ${p1Block1.x};${p1Block1.y}\t${p1Block2.x};${p1Block2.y}`);
+    // console.log(`player2: ${p2Block1.x};${p2Block1.y}\t${p2Block2.x};${p2Block2.y}`);
+    // console.log(`bombLeft: ${this.bombX  - 1};${this.bombY}`);
+    // console.log(`bombRight: ${this.bombX + 1};${this.bombY}`);
+    // console.log(`bombTop: ${this.bombX};${this.bombY - 1}`);
+    // console.log(`bombBottom: ${this.bombX};${this.bombY + 1}`);
+    this.explosion.start = { x: this.bomb.x, y: this.bomb.y };
 
-    let explosionUpStart = {x: this.bombX, y: this.bombY};
-    let explosionUpEnd = {x: this.bombX, y: this.bombY};
-    for (let i = 1; i <= this.bombRange; i++) {
-      if (this.bombY - i < 0) {
+    this.explosion.topEnd = { x: this.bomb.x, y: this.bomb.y };
+    for (let i = 1; i <= this.bomb.range; i++) {
+      if (this.bomb.y - i < 0) {
         break;
       } else {
-        let topSquare = map[this.bombY - i][this.bombX];
+        let topSquare = map[this.bomb.y - i][this.bomb.x];
         if (topSquare == undefined || topSquare == 'wall') {
           break;
         } else if (topSquare == 'sand') {
-          map[this.bombY - i][this.bombX] = '0';
+          map[this.bomb.y - i][this.bomb.x] = '0';
+          generatePowerUp(this.bomb.x, this.bomb.y - i);
+          this.explosion.topEnd = { x: this.bomb.x, y: this.bomb.y - i };
           break;
-        } 
-        explosionUpEnd = {x: this.bombX, y: this.bombY - i};
-        if (this.bombY - i == p1Block1.y && this.bombX == p1Block1.x || this.bombY - i == p1Block2.y && this.bombX == p1Block2.x){
+        }
+        this.explosion.topEnd = { x: this.bomb.x, y: this.bomb.y - i };
+        if (this.bomb.y - i == p1Block1.y && this.bomb.x == p1Block1.x || this.bomb.y - i == p1Block2.y && this.bomb.x == p1Block2.x) {
           player1.health -= 1;
           break;
-        } else if (this.bombY - i == p2Block1.y && this.bombX == p2Block1.x || this.bombY - i == p2Block2.y && this.bombX == p2Block2.x){
+        } else if (this.bomb.y - i == p2Block1.y && this.bomb.x == p2Block1.x || this.bomb.y - i == p2Block2.y && this.bomb.x == p2Block2.x) {
           player2.health -= 1;
           break;
         }
       }
     }
 
-    let explosionBottomStart = {x: this.bombX, y: this.bombY};
-    let explosionBottomEnd = {x: this.bombX, y: this.bombY};
-    for (let i = 1; i <= this.bombRange; i++) {
-      if (this.bombY + i > 14) {
+    this.explosion.bottomEnd = { x: this.bomb.x, y: this.bomb.y };
+    for (let i = 1; i <= this.bomb.range; i++) {
+      if (this.bomb.y + i > 14) {
         break;
       } else {
-        let bottomSquare = map[this.bombY + i][this.bombX];
+        let bottomSquare = map[this.bomb.y + i][this.bomb.x];
         if (bottomSquare == undefined || bottomSquare == 'wall') {
           break;
         } else if (bottomSquare == 'sand') {
-          map[this.bombY + i][this.bombX] = '0';
+          map[this.bomb.y + i][this.bomb.x] = '0';
+          generatePowerUp(this.bomb.x, this.bomb.y + i);
+          this.explosion.bottomEnd = { x: this.bomb.x, y: this.bomb.y + i };
           break;
         }
-        
-        explosionBottomEnd = {x: this.bombX, y: this.bombY + i};
-        if (this.bombY + i == p1Block1.y && this.bombX == p1Block1.x || this.bombY + i == p1Block2.y && this.bombX == p1Block2.x){
+        this.explosion.bottomEnd = { x: this.bomb.x, y: this.bomb.y + i };
+        if (this.bomb.y + i == p1Block1.y && this.bomb.x == p1Block1.x || this.bomb.y + i == p1Block2.y && this.bomb.x == p1Block2.x) {
           player1.health -= 1;
           break;
-        } else if (this.bombY + i == p2Block1.y && this.bombX == p2Block1.x || this.bombY + i == p2Block2.y && this.bombX == p2Block2.x){
+        } else if (this.bomb.y + i == p2Block1.y && this.bomb.x == p2Block1.x || this.bomb.y + i == p2Block2.y && this.bomb.x == p2Block2.x) {
           player2.health -= 1;
           break;
         }
       }
     }
 
-    let explosionLeftStart = {x: this.bombX, y: this.bombY};
-    let explosionLeftEnd = {x: this.bombX, y: this.bombY};
-    for (let i = 1; i <= this.bombRange; i++) {
-      if (this.bombX - i < 0) {
+    this.explosion.leftEnd = { x: this.bomb.x, y: this.bomb.y };
+    for (let i = 1; i <= this.bomb.range; i++) {
+      if (this.bomb.x - i < 0) {
         break;
       } else {
-        let leftSquare = map[this.bombY][this.bombX - i];
+        let leftSquare = map[this.bomb.y][this.bomb.x - i];
         if (leftSquare == undefined || leftSquare == 'wall') {
           break;
         } else if (leftSquare == 'sand') {
-          map[this.bombY][this.bombX - i] = '0';
+          map[this.bomb.y][this.bomb.x - i] = '0';
+          generatePowerUp(this.bomb.x - i, this.bomb.y);
+          this.explosion.leftEnd = { x: this.bomb.x - i, y: this.bomb.y };
           break;
         }
-        
-        explosionLeftEnd = {x: this.bombX - i, y: this.bombY};
-        if (this.bombY == p1Block1.y && this.bombX - 1 == p1Block1.x || this.bombY == p1Block2.y && this.bombX - 1 == p1Block2.x){
+
+        this.explosion.leftEnd = { x: this.bomb.x - i, y: this.bomb.y };
+        if (this.bomb.y == p1Block1.y && this.bomb.x - i == p1Block1.x || this.bomb.y == p1Block2.y && this.bomb.x - i == p1Block2.x) {
           player1.health -= 1;
           break;
-        } else if (this.bombY == p2Block1.y && this.bombX - 1 == p2Block1.x || this.bombY == p2Block2.y && this.bombX - 1 == p2Block2.x){
+        } else if (this.bomb.y == p2Block1.y && this.bomb.x - i == p2Block1.x || this.bomb.y == p2Block2.y && this.bomb.x - i == p2Block2.x) {
           player2.health -= 1;
           break;
         }
       }
     }
 
-    let explosionRightStart = {x: this.bombX, y: this.bombY};
-    let explosionRightEnd = {x: this.bombX, y: this.bombY};
-    for (let i = 1; i <= this.bombRange; i++) {
-      if (this.bombX + i > 14) {
+    this.explosion.rightEnd = { x: this.bomb.x, y: this.bomb.y };
+    for (let i = 1; i <= this.bomb.range; i++) {
+      if (this.bomb.x + i > 14) {
         break;
       } else {
-        let rightSquare = map[this.bombY][this.bombX + i];
+        let rightSquare = map[this.bomb.y][this.bomb.x + i];
         if (rightSquare == undefined || rightSquare == 'wall') {
           break;
         } else if (rightSquare == 'sand') {
-          map[this.bombY][this.bombX + i] = '0';
+          map[this.bomb.y][this.bomb.x + i] = '0';
+          generatePowerUp(this.bomb.x + i, this.bomb.y);
+          this.explosion.rightEnd = { x: this.bomb.x + i, y: this.bomb.y };
           break;
         }
-        
-        explosionRightEnd = {x: this.bombX + i, y: this.bombY};
-        if (this.bombY == p1Block1.y && this.bombX + 1 == p1Block1.x || this.bombY == p1Block2.y && this.bombX + 1 == p1Block2.x){
+        this.explosion.rightEnd = { x: this.bomb.x + i, y: this.bomb.y };
+        if (this.bomb.y == p1Block1.y && this.bomb.x + i == p1Block1.x || this.bomb.y == p1Block2.y && this.bomb.x + i == p1Block2.x) {
           player1.health -= 1;
           break;
-        } else if (this.bombY == p2Block1.y && this.bombX + 1 == p2Block1.x || this.bombY == p2Block2.y && this.bombX + 1 == p2Block2.x){
+        } else if ((this.bomb.y == p2Block1.y && this.bomb.x + i == p2Block1.x) || (this.bomb.y == p2Block2.y && this.bomb.x + i == p2Block2.x)) {
           player2.health -= 1;
           break;
         }
       }
     }
-    console.log(`player1: ${player1.health}\nplayer2: ${player2.health}`);
-    this.bombPlaced = false;
+    // console.log(`Start:${this.explosion.start.x}; ${this.explosion.start.y}`);
+    // console.log(`TopEnd:${this.explosion.topEnd.x}; ${this.explosion.topEnd.y}`);
+    // console.log(`RightEnd:${this.explosion.rightEnd.x}; ${this.explosion.rightEnd.y}`);
+    // console.log(`LeftEnd:${this.explosion.leftEnd.x}; ${this.explosion.leftEnd.y}`);
+    // console.log(`BottomEnd:${this.explosion.bottomEnd.x}; ${this.explosion.bottomEnd.y}`);
+    // console.log(`p1: ${p1Block1.x};${p1Block1.y}`);
+    // console.log(`p1: ${p1Block2.x};${p1Block2.y}`);
+    // console.log(`p2: ${p2Block1.x};${p2Block1.y}`);
+    // console.log(`p2: ${p2Block2.x};${p2Block2.y}`);
+
+    this.explosion.imgFrameWidth = 0;
+    this.explosion.frame = 0;
+    this.bomb.explosion = true;
+    // map[this.bomb.y][this.bomb.x] = '0';
+    console.log(player1.health);
+    console.log(player2.health);
+
   }
 
-  draw() {
-    ctx.drawImage(this.bombImage,
-      this.frameWidth * 40,
+  // Start:1; 0
+  // TopEnd:1; 0
+  // RightEnd:2; 0
+  // LeftEnd:0; 0
+  // BottomEnd:1; 0
+
+  explosionStart() {
+    this.drawExplosion(bombExplosionStartImage, 0, this.explosion.start.x * 40, this.explosion.start.y * 40);
+  }
+
+  explosionTop() {
+    if (this.explosion.start.y != this.explosion.topEnd.y) {
+      for (let i = this.explosion.start.y - 1; i > this.explosion.topEnd.y; i--) {
+        this.drawExplosion(bombExplosionTopImage, 0, this.explosion.start.x * 40, i * 40);
+      }
+      this.drawExplosion(bombExplosionTopImage, 1, this.explosion.topEnd.x * 40, this.explosion.topEnd.y * 40);
+    }
+  }
+
+  explosionBottom() {
+    if (this.explosion.start.y != this.explosion.bottomEnd.y) {
+      for (let i = this.explosion.start.y + 1; i < this.explosion.bottomEnd.y; i++) {
+        this.drawExplosion(bombExplosionBottomImage, 0, this.explosion.start.x * 40, i * 40);
+      }
+      this.drawExplosion(bombExplosionBottomImage, 1, this.explosion.bottomEnd.x * 40, this.explosion.bottomEnd.y * 40);
+    }
+  }
+
+  explosionRight() {
+    if (this.explosion.start.x != this.explosion.rightEnd.x) {
+      for (let i = this.explosion.start.x + 1; i < this.explosion.rightEnd.x; i++) {
+        this.drawExplosion(bombExplosionRightImage, 0, i * 40, this.explosion.start.y * 40);
+      }
+      this.drawExplosion(bombExplosionRightImage, 1, this.explosion.rightEnd.x * 40, this.explosion.rightEnd.y * 40);
+    }
+  }
+
+  explosionLeft() {
+    if (this.explosion.start.x != this.explosion.leftEnd.x) {
+      for (let i = this.explosion.start.x - 1; i > this.explosion.leftEnd.x; i--) {
+        this.drawExplosion(bombExplosionLeftImage, 0, i * 40, this.explosion.start.y * 40);
+      }
+      this.drawExplosion(bombExplosionLeftImage, 1, this.explosion.leftEnd.x * 40, this.explosion.leftEnd.y * 40);
+    }
+  }
+
+  drawBomb() {
+    ctx.drawImage(this.bomb.image,
+      this.bomb.imgFrameWidth * 40,
       0,
       40,
       40,
-      (this.bombX * 40) + mapXStart,
-      (this.bombY * 40) + mapYStart,
+      (this.bomb.x * 40) + mapXStart,
+      (this.bomb.y * 40) + mapYStart,
+      40,
+      40);
+  }
+
+  drawExplosion(image, explosionFrameHeight, explosionX, explosionY) {
+    ctx.drawImage(image,
+      this.explosion.imgFrameWidth * 48,
+      explosionFrameHeight * 48,
+      48,
+      48,
+      explosionX + mapXStart,
+      explosionY + mapYStart,
       40,
       40);
   }
 
   update() {
-    if (this.bombPlaced == true) {
-      if (frames % 30 == 0) {
-        if (this.frameWidth < 5) {
-          this.frameWidth++;
+    if (this.bomb.placed == true && this.bomb.explosion == false) {
+      this.bomb.frame++;
+      if (this.bomb.frame % 31 == 0) {
+        if (this.bomb.imgFrameWidth < 5) {
+          this.bomb.imgFrameWidth++;
         }
       }
-      this.draw();
+      this.drawBomb();
     }
+    if (this.bomb.explosion == true) {
+      this.explosion.frame++;
+      if (this.explosion.frame % 4 == 0) {
+        if (this.explosion.imgFrameWidth < 6) {
+          this.explosion.imgFrameWidth++;
+        } else if (this.explosion.imgFrameWidth == 6) {
+          this.bomb.explosion = false;
+          this.bomb.placed = false;
+        }
+      }
+      this.explosionStart();
+      this.explosionTop();
+      this.explosionBottom();
+      this.explosionRight();
+      this.explosionLeft();
+    }
+  }
+}
+
+class PowerUp {
+  constructor({type, image, x, y}) {
+    this.powerUp = {
+      type: type,
+      image: new Image(),
+      x: x,
+      y: y,
+    }
+    this.powerUp.image.src = image; 
   }
 }
 
 const canvas = document.querySelector("canvas");
 const ctx = canvas.getContext("2d");
+ctx.imageSmoothingEnabled = false;
+ctx.imageSmoothingQuality = "high";
 canvas.width = window.innerWidth - 50;
 canvas.height = window.innerHeight - 50;
-let frames = 0;
+var frames = 0;
 
 let mapXStart = (canvas.width / 2) - 300;
-let mapYStart = 20;
-let map = Array(15).fill("0").map(() => Array(15).fill("0"));
+let mapYStart = 25;
+var map = Array(15).fill("0").map(() => Array(15).fill("0"));
 let mapWidth = 600;
 let mapHeight = 600;
+
+var powerUps = [];
+var powerUpTypes = ["bomb", "range", "speed", "shield"];
+var powerUpImages = ["./img/powerUps/bomb.png", "./img/powerUps/range.png", "./img/powerUps/speed.png", "./img/powerUps/shield.png"];
 
 {
   let player1SelectedCharachter = "01";
@@ -379,18 +539,68 @@ let mapHeight = 600;
     }
   });
 
+  var bombExplosionStartImage = new Image();
+  bombExplosionStartImage.src = "./img/bomb/bombExplosionStart.png";
+
+  var bombExplosionRightImage = new Image();
+  bombExplosionRightImage.src = "./img/bomb/bombExplosionRight.png";
+
+  var bombExplosionBottomImage = new Image();
+  bombExplosionBottomImage.src = "./img/bomb/bombExplosionBottom.png";
+
+  var bombExplosionLeftImage = new Image();
+  bombExplosionLeftImage.src = "./img/bomb/bombExplosionLeft.png";
+
+  var bombExplosionTopImage = new Image();
+  bombExplosionTopImage.src = "./img/bomb/bombExplosionTop.png";
+
+  var powerUpBombImage = new Image();
+  powerUpBombImage.src = "./img/powerUps/bomb.png";
+
+  var powerUpExplosionRangeImage = new Image();
+  powerUpBombImage.src = "./img/powerUps/range.png";
+
+  var powerUpShieldImage = new Image();
+  powerUpBombImage.src = "./img/powerUps/shield.png";
+
+  var powerUpSpeedImage = new Image();
+  powerUpBombImage.src = "./img/powerUps/speed.png";
+
+  var healthImage = new Image();
+  healthImage.src = "./img/health.png";
+
   function Loading() {
-    window.onload;
-    player1DownImage.onload;
-    player1UpImage.onload;
-    player1DownImage.onload;
-    player1LeftImage.onload;
-  
-    player2DownImage.onload;
-    player2UpImage.onload;
-    player2LeftImage.onload;
-    player2RightImage.onload;
-    init();
+    window.onload = loadImages();
+    function loadImages() {
+      const images = [
+        player1DownImage,
+        player1UpImage,
+        player1LeftImage,
+        player2DownImage,
+        player2UpImage,
+        player2LeftImage,
+        player2RightImage,
+        powerUpBombImage,
+        powerUpExplosionRangeImage,
+        powerUpShieldImage,
+        powerUpSpeedImage,
+        bombExplosionStartImage,
+        bombExplosionRightImage,
+        bombExplosionBottomImage,
+        bombExplosionLeftImage,
+        bombExplosionTopImage
+      ];
+
+      const totalImages = images.length; // Set the total number of images
+      let loadedImages = 0; // Initialize the counter
+
+      for (let i = 0; i < images.length; i++) {
+        images[i].onload = loadedImages++;
+      }
+      if (loadedImages == totalImages) {
+        init();
+      }
+    }
   }
 }
 
@@ -443,8 +653,94 @@ function gameLoop() {
   player1.update();
   player2.bomb.update();
   player2.update();
+  drawHUD();
   frames++;
 } setInterval(gameLoop, 1000 / 60)
+
+function drawHUD() {
+  // Avatar
+  drawAvatar();
+  drawHealth();
+
+}
+
+function drawAvatar() {
+  ctx.drawImage(player1.imageAvatar, // image source
+    0, // frame width index
+    0, // frame height
+    (player1.image.width / 4), // frame width
+    player1.image.height, // frame height
+    25, // x position
+    25, // y position
+    100 * ((player1.image.width / 4) / player1.image.height), // width size
+    100
+  ); // height size
+  ctx.drawImage(player2.imageAvatar,
+    0,
+    0,
+    (player2.image.width / 4),
+    player2.image.height,
+    canvas.width - (100 * ((player2.image.width / 4) / player2.image.height)) - 25,
+    25,
+    100 * ((player2.image.width / 4) / player2.image.height),
+    100
+  );
+}
+
+function drawHealth() {
+  // player1
+  for (let i = 0; i < 3; i++) {
+    if (i + 1 <= player1.health) { // full health
+      ctx.drawImage(healthImage,
+        0,
+        0,
+        healthImage.width / 2,
+        healthImage.height,
+        25 + 100 + ((healthImage.width / 2) * i) + (i * 10),
+        25,
+        40,
+        40
+        );
+    } else {
+      ctx.drawImage(healthImage,
+        1 * (healthImage.width / 2),
+        0,
+        healthImage.width / 2,
+        healthImage.height,
+        25 + 100 + ((healthImage.width / 2) * i) + (i * 10),
+        25,
+        40,
+        40
+        );
+    }
+  }
+  // player2
+  for (let i = 0; i < 3; i++) {
+    if (i + 1 <= player2.health) { // full health
+      ctx.drawImage(healthImage,
+        0,
+        0,
+        healthImage.width / 2,
+        healthImage.height,
+        canvas.width - 100 - 25 - 50 - ((healthImage.width / 2) * i) - (i * 10),
+        25,
+        40,
+        40
+        );
+    } else {
+      ctx.drawImage(healthImage,
+        1 * (healthImage.width / 2),
+        0,
+        healthImage.width / 2,
+        healthImage.height,
+        canvas.width - 100 - 25 - 50 - ((healthImage.width / 2) * i) - (i * 10),
+        25,
+        40,
+        40
+        );
+    }
+  }
+}
 
 function generateWall() {
   for (let i = 1; i < 15; i++) {
@@ -496,6 +792,30 @@ function drawMap() {
           ctx.fillStyle = "black";
           ctx.fillRect(j * 40 + mapXStart, i * 40 + mapYStart, 40, 40);
           break;
+        case 'powerUp':
+          // let position = 0;
+          // let increasing = true;
+          // if (frames % 10 == 0) {
+          //   if (increasing) {
+          //     position++;
+          //     if (position == 10){
+          //       increasing = false;
+          //     }
+          //   } else {
+          //     position--;
+          //     if (position == -10){
+          //       increasing = true;
+          //     }
+          //   }
+          // }
+          powerUps.forEach(e => {
+            if (e.powerUp.x == j && e.powerUp.y == i) {
+              console.log('asd');
+              ctx.drawImage(e.powerUp.image, j * 40 + mapXStart + 5, i * 40 + mapYStart + 5, 30, 30);
+            }
+          });
+          // ctx.fillStyle = "red";
+          // ctx.fillRect(j * 40 + mapXStart, i * 40 + mapYStart, 40, 40);
       }
     }
   }
@@ -504,28 +824,62 @@ function drawMap() {
 function isInsideMap(playerX, playerY, playerWidth, playerHeight) {
   const x = playerX + mapXStart;
   const y = playerY + mapYStart;
-  if (x < mapXStart || x + playerWidth > mapXStart + mapWidth || y +1  < mapYStart || y + playerHeight - (playerHeight - 40) > mapYStart + mapHeight) {
+  if (x < mapXStart || x + playerWidth > mapXStart + mapWidth || y + 1 < mapYStart || y + playerHeight - (playerHeight - 40) > mapYStart + mapHeight) {
     return false;
   }
   return true;
 }
 
-function isColliding(playerX, playerY, playerWidth, playerHeight) {
+function isColliding(playerX, playerY, playerWidth, playerHeight, player) {
   const xStart = Math.floor(playerX / 40);
   const yStart = Math.floor((playerY + (playerHeight - 40)) / 40);
   const xEnd = Math.floor((playerX + playerWidth - 1) / 40);
   const yEnd = Math.floor((playerY + playerHeight - (playerHeight - 40) - 1) / 40);
-  const block1X = Math.floor(playerX / 40);
-  const block1Y = Math.floor(playerY / 40);
-  const block2X = Math.floor((playerX + playerWidth - 1) / 40);
-  const block2Y = Math.floor((playerY + playerHeight - (playerHeight - 40) - 1) / 40);
+  const block1 = {
+    x: Math.floor(playerX / 40),
+    y: Math.floor((playerY + (playerHeight - 40)) / 40)
+  }
+  const block2 = {
+    x: Math.floor((playerX + playerWidth - 1) / 40),
+    y: Math.floor((playerY + playerHeight - (playerHeight - 40) - 1) / 40)
+  }
   if (map[yStart][xStart] == "wall" || map[yEnd][xEnd] == "wall" || map[yEnd][xStart] == "wall" || map[yStart][xEnd] == "wall") {
     return true;
   }
   else if (map[yStart][xStart] == "sand" || map[yEnd][xEnd] == "sand" || map[yEnd][xStart] == "sand" || map[yStart][xEnd] == "sand") {
     return true;
   }
+  else if (map[yStart][xStart] == "powerUp") {
+    map[yStart][xStart] = "0";
+  }
+  else if (map[yEnd][xEnd] == "powerUp") {
+    map[yEnd][xEnd] = "0";
+  }
+  else if (map[yEnd][xStart] == "powerUp") {
+    map[yStart][xStart] = "0";
+  }
+  else if (map[yStart][xEnd] == "powerUp") {
+    map[yEnd][xEnd] = "0";
+  }
+  // else if (map[yStart][xStart] == "bomb" || map[yEnd][xEnd] == "bomb" || map[yEnd][xStart] == "bomb" || map[yStart][xEnd] == "bomb") {
+  //   if (map[block1.y][block1.x] == "bomb" || map[block2.y][block2.x] == "bomb"){
+  //     console.log(block1.x, block1.y, block2.x, block2.y);
+  //     console.log(map);
+  //     return true;
+  //   }
+  // }
   return false;
+}
+
+function generatePowerUp(x, y) {
+  let chance = 0.5;
+  let randomNumber = Math.random();
+  let randomType = Math.floor(Math.random() * powerUpTypes.length);
+  if (randomNumber < chance) {
+    map[y][x] = "powerUp";
+    powerUps.push(new PowerUp({type: powerUpTypes[randomType], image: powerUpImages[randomType], x: x, y: y}));
+  }
+  console.log(powerUps);
 }
 
 window.addEventListener('keydown', (e) => {
