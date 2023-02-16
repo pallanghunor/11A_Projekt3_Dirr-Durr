@@ -115,6 +115,14 @@ class Player {
     }
 
     update() {
+        if (this.health == 0) {
+            GameEnd = true;
+            if (this.player == 1) {
+                winner = 2;
+            } else {
+                winner = 1;
+            }
+        }
         if (this.player == 1) {
             if (keys.w.pressed) {
                 this.moveUp();

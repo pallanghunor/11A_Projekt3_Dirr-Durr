@@ -1,8 +1,13 @@
-const canvas = document.querySelector("canvas");
-const ctx = canvas.getContext("2d");
 ctx.imageSmoothingEnabled = false;
 canvas.width = window.innerWidth - 50;
 canvas.height = window.innerHeight - 50;
+var GameEnd = false;
+const winnerFont = "64px sans-serif";
+ctx.font = winnerFont;
+ctx.textAlign = "center";
+ctx.textBaseline = "middle";
+ctx.fillStyle = "white";
+var winner = 0;
 var frames = 0;
 
 let mapXStart = (canvas.width / 2) - 300;
@@ -59,7 +64,7 @@ var powerUpImages = ["./img/powerUps/bomb.png", "./img/powerUps/range.png", "./i
   var player2 = new Player({
     player: 2,
     x: 565,
-    y: 560,
+    y: 559,
     image: player2DownImage,
     sprites: {
       up: player2UpImage,
@@ -113,7 +118,7 @@ var powerUpImages = ["./img/powerUps/bomb.png", "./img/powerUps/range.png", "./i
 
   var shieldTextureImage = new Image();
   shieldTextureImage.src = "./img/textures/shield.png";
-  
+
 
 
   function Loading() {
@@ -202,20 +207,48 @@ function init() {
   generateWall();
   generateSand();
   console.log(map);
-  gameLoop();
+  // gameLoop();
 }
 
+let FadeIn = 0;
+let FadeOut = 1;
+let cleaned = false;
 function gameLoop() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = "rgb(94, 87, 87)";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  drawWall();
-  drawMap();
-  player1.updateBombs();
-  player1.update();
-  // player2.updateBombs();
-  // player2.update();
-  drawHUD();
+  if (!GameEnd) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "rgb(94, 87, 87)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    drawWall();
+    drawMap();
+    player1.updateBombs();
+    player1.update();
+    player2.updateBombs();
+    player2.update();
+    drawHUD();
+  } else {
+    FadeOut -= 0.015;
+    if (FadeOut >= 0) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.globalAlpha = FadeOut;
+      console.log(2);
+      drawWall();
+      drawMap();
+      drawHUD();
+    } 
+    if (FadeOut <= 0 && cleaned == false) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.globalAlpha = 1;
+      cleaned = true;
+      console.log(1);
+    }
+    if (FadeIn <= 1 && FadeOut <= 0) {
+      FadeIn += 0.001;
+      ctx.fillStyle = `rgba(0, 0, 0, ${FadeIn})`;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "white";
+      ctx.fillText(`${winner}. játékos nyert!`, canvas.width / 2, canvas.height / 2);
+    }
+  }
   frames++;
 } setInterval(gameLoop, 1000 / 60)
 
@@ -223,6 +256,12 @@ function drawHUD() {
   // Avatar
   drawAvatar();
   drawHealth();
+
+}
+
+function clearScreen() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  cleaned = true;
 
 }
 
@@ -250,59 +289,59 @@ function drawAvatar() {
 }
 
 function drawHealth() {
-  // player1
-  for (let i = 0; i < 3; i++) {
-    if (i + 1 <= player1.health) { // full health
-      ctx.drawImage(healthImage,
-        0,
-        0,
-        healthImage.width / 2,
-        healthImage.height,
-        25 + 100 + ((healthImage.width / 2) * i) + (i * 10),
-        25,
-        40,
-        40
-      );
-    } else {
-      ctx.drawImage(healthImage,
-        1 * (healthImage.width / 2),
-        0,
-        healthImage.width / 2,
-        healthImage.height,
-        25 + 100 + ((healthImage.width / 2) * i) + (i * 10),
-        25,
-        40,
-        40
-      );
+    for (let i = 0; i < 3; i++) {
+      if (i + 1 <= player1.health) { // full health
+        ctx.drawImage(healthImage,
+          0,
+          0,
+          healthImage.width / 2,
+          healthImage.height,
+          25 + 100 + ((healthImage.width / 2) * i) + (i * 10),
+          25,
+          40,
+          40
+        );
+      } else {
+        ctx.drawImage(healthImage,
+          1 * (healthImage.width / 2),
+          0,
+          healthImage.width / 2,
+          healthImage.height,
+          25 + 100 + ((healthImage.width / 2) * i) + (i * 10),
+          25,
+          40,
+          40
+        );
+      }
+    }
+    // player2
+    for (let i = 0; i < 3; i++) {
+      if (i + 1 <= player2.health) { // full health
+        ctx.drawImage(healthImage,
+          0,
+          0,
+          healthImage.width / 2,
+          healthImage.height,
+          canvas.width - 100 - 25 - 50 - ((healthImage.width / 2) * i) - (i * 10),
+          25,
+          40,
+          40
+        );
+      } else {
+        ctx.drawImage(healthImage,
+          1 * (healthImage.width / 2),
+          0,
+          healthImage.width / 2,
+          healthImage.height,
+          canvas.width - 100 - 25 - 50 - ((healthImage.width / 2) * i) - (i * 10),
+          25,
+          40,
+          40
+        );
+      }
     }
   }
-  // player2
-  for (let i = 0; i < 3; i++) {
-    if (i + 1 <= player2.health) { // full health
-      ctx.drawImage(healthImage,
-        0,
-        0,
-        healthImage.width / 2,
-        healthImage.height,
-        canvas.width - 100 - 25 - 50 - ((healthImage.width / 2) * i) - (i * 10),
-        25,
-        40,
-        40
-      );
-    } else {
-      ctx.drawImage(healthImage,
-        1 * (healthImage.width / 2),
-        0,
-        healthImage.width / 2,
-        healthImage.height,
-        canvas.width - 100 - 25 - 50 - ((healthImage.width / 2) * i) - (i * 10),
-        25,
-        40,
-        40
-      );
-    }
-  }
-}
+
 
 function generateWall() {
   for (let i = 1; i < 15; i++) {
@@ -431,7 +470,7 @@ function isColliding(playerX, playerY, playerWidth, playerHeight, player) {
       powerUp.x = xStart;
       powerUp.y = yStart;
       map[yStart][xStart] = "0";
-    } else if(isShieldActivated(player) && !isShield(xStart, yStart)) {
+    } else if (isShieldActivated(player) && !isShield(xStart, yStart)) {
       powerUp.x = xStart;
       powerUp.y = yStart;
       map[yStart][xStart] = "0";
@@ -443,7 +482,7 @@ function isColliding(playerX, playerY, playerWidth, playerHeight, player) {
       powerUp.x = xEnd;
       powerUp.y = yEnd;
       map[yEnd][xEnd] = "0";
-    } else if(isShieldActivated(player) && !isShield(xEnd, yEnd)) {
+    } else if (isShieldActivated(player) && !isShield(xEnd, yEnd)) {
       powerUp.x = xEnd;
       powerUp.y = yEnd;
       map[yEnd][xEnd] = "0";
@@ -465,7 +504,7 @@ function isColliding(playerX, playerY, playerWidth, playerHeight, player) {
       powerUp.x = xEnd;
       powerUp.y = yStart;
       map[yStart][xEnd] = "0";
-    } else if(isShieldActivated(player) && !isShield(xEnd, yStart)) {
+    } else if (isShieldActivated(player) && !isShield(xEnd, yStart)) {
       powerUp.x = xEnd;
       powerUp.y = yStart;
       map[yStart][xEnd] = "0";
@@ -525,7 +564,7 @@ function generatePowerUp(x, y) {
   let randomNumber = Math.random();
   let randomType = Math.floor(Math.random() * powerUpTypes.length);
   if (randomNumber < chance) {
-      map[y][x] = "powerUp";
+    map[y][x] = "powerUp";
     powerUps.push(new PowerUp({ type: powerUpTypes[randomType], image: powerUpImages[randomType], x: x, y: y }));
   }
 }
@@ -542,7 +581,7 @@ function isShieldActivated(player) {
   }
 }
 
-function isShield(x, y){
+function isShield(x, y) {
   for (const p of powerUps) {
     if (p.powerUp.x == x && p.powerUp.y == y && p.powerUp.type == "shield") {
       return true;
