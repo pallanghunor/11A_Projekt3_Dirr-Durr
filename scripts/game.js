@@ -560,7 +560,7 @@ function isColliding(playerX, playerY, playerWidth, playerHeight, player) {
 }
 
 function generatePowerUp(x, y) {
-  let chance = 0.5;
+  let chance = 0.3;
   let randomNumber = Math.random();
   let randomType = Math.floor(Math.random() * powerUpTypes.length);
   if (randomNumber < chance) {
