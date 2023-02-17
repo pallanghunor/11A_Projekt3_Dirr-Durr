@@ -156,7 +156,7 @@ class Player {
             if (keys.arrowRight.pressed) {
                 this.moveRight();
             }
-            if (keys.e.pressed && this.bombplaced < this.powerUps.bomb && !keys.space.delay) {
+            if (keys.e.pressed && this.bombplaced < this.powerUps.bomb && !keys.e.delay) {
                 this.placeBomb();
                 this.keypressDelay();
             }

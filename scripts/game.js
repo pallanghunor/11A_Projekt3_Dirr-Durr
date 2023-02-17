@@ -1,6 +1,5 @@
 ctx.imageSmoothingEnabled = false;
-canvas.width = window.innerWidth - 50;
-canvas.height = window.innerHeight - 50;
+
 var GameEnd = false;
 const winnerFont = "64px sans-serif";
 ctx.font = winnerFont;
@@ -21,58 +20,36 @@ var powerUpTypes = ["bomb", "range", "speed", "shield"];
 var powerUpImages = ["./img/powerUps/bomb.png", "./img/powerUps/range.png", "./img/powerUps/speed.png", "./img/powerUps/shield.png"];
 
 {
-  let player1SelectedCharachter = "01";
-  let player1DownImage = new Image();
+  var player1SelectedCharachter = "01";
+  var player1DownImage = new Image();
   player1DownImage.src = `./img/characters/${player1SelectedCharachter}/playerDown.png`;
 
-  let player1UpImage = new Image();
+  var player1UpImage = new Image();
   player1UpImage.src = `./img/characters/${player1SelectedCharachter}/playerUp.png`;
 
-  let player1LeftImage = new Image();
+  var player1LeftImage = new Image();
   player1LeftImage.src = `./img/characters/${player1SelectedCharachter}/playerLeft.png`;
 
-  let player1RightImage = new Image();
+  var player1RightImage = new Image();
   player1RightImage.src = `./img/characters/${player1SelectedCharachter}/playerRight.png`;
 
-  var player1 = new Player({
-    player: 1,
-    x: 5,
-    y: 0,
-    image: player1DownImage,
-    sprites: {
-      up: player1UpImage,
-      left: player1LeftImage,
-      right: player1RightImage,
-      down: player1DownImage
-    }
-  });
+  
 
-  let player2SelectedCharachter = "01";
+  var player2SelectedCharachter = "01";
 
-  let player2DownImage = new Image();
+  var player2DownImage = new Image();
   player2DownImage.src = `./img/characters/${player2SelectedCharachter}/playerDown.png`;
 
-  let player2UpImage = new Image();
+  var player2UpImage = new Image();
   player2UpImage.src = `./img/characters/${player2SelectedCharachter}/playerUp.png`;
 
-  let player2LeftImage = new Image();
+  var player2LeftImage = new Image();
   player2LeftImage.src = `./img/characters/${player2SelectedCharachter}/playerLeft.png`;
 
-  let player2RightImage = new Image();
+  var player2RightImage = new Image();
   player2RightImage.src = `./img/characters/${player2SelectedCharachter}/playerRight.png`;
 
-  var player2 = new Player({
-    player: 2,
-    x: 565,
-    y: 559,
-    image: player2DownImage,
-    sprites: {
-      up: player2UpImage,
-      left: player2LeftImage,
-      right: player2RightImage,
-      down: player2DownImage
-    }
-  });
+  
 
   var bombExplosionStartImage = new Image();
   bombExplosionStartImage.src = "./img/bomb/bombExplosionStart.png";
@@ -119,50 +96,51 @@ var powerUpImages = ["./img/powerUps/bomb.png", "./img/powerUps/range.png", "./i
   var shieldTextureImage = new Image();
   shieldTextureImage.src = "./img/textures/shield.png";
 
+  var player1;
+  var player2;
 
 
   function Loading() {
-    window.onload = loadImages();
-    function loadImages() {
-      const images = [
-        player1DownImage,
-        player1UpImage,
-        player1LeftImage,
-        player2DownImage,
-        player2UpImage,
-        player2LeftImage,
-        player2RightImage,
-        powerUpBombImage,
-        powerUpExplosionRangeImage,
-        powerUpShieldImage,
-        powerUpSpeedImage,
-        bombExplosionStartImage,
-        bombExplosionRightImage,
-        bombExplosionBottomImage,
-        bombExplosionLeftImage,
-        bombExplosionTopImage,
-        powerUpBombImage,
-        powerUpExplosionRangeImage,
-        powerUpShieldImage,
-        powerUpSpeedImage,
-        healthImage,
-        wallTextureImage,
-        sandTextureImage,
-        road1TextureImage,
-        road2TextureImage,
-        shieldTextureImage
-      ];
-
-      const totalImages = images.length; // Set the total number of images
-      let loadedImages = 0; // Initialize the counter
-
-      for (let i = 0; i < images.length; i++) {
-        images[i].onload = loadedImages++;
-      }
-      if (loadedImages == totalImages) {
-        init();
-      }
+    console.log('loading');
+    const images = [    player1DownImage,    player1UpImage,    player1LeftImage,    player2DownImage,    player2UpImage,    player2LeftImage,    player2RightImage,    powerUpBombImage,    powerUpExplosionRangeImage,    powerUpShieldImage,    powerUpSpeedImage,    bombExplosionStartImage,    bombExplosionRightImage,    bombExplosionBottomImage,    bombExplosionLeftImage,    bombExplosionTopImage,    powerUpBombImage,    powerUpExplosionRangeImage,    powerUpShieldImage,    powerUpSpeedImage,    healthImage,    wallTextureImage,    sandTextureImage,    road1TextureImage,    road2TextureImage,    shieldTextureImage  ];
+    console.log(images);
+    const totalImages = images.length; // Set the total number of images
+    let loadedImages = 0; // Initialize the counter
+  
+    for (let i = 0; i < images.length; i++) {
+      images[i].onload = () => { loadedImages++; console.log('loaded'); };
+      images[i].onerror = (error) => {
+        console.error("Error loading image: ", error);
+      };
     }
+    player1 = new Player({
+      player: 1,
+      x: 5,
+      y: 0,
+      image: player1DownImage,
+      sprites: {
+        up: player1UpImage,
+        left: player1LeftImage,
+        right: player1RightImage,
+        down: player1DownImage
+      }
+    });
+    player2 = new Player({
+      player: 2,
+      x: 565,
+      y: 559,
+      image: player2DownImage,
+      sprites: {
+        up: player2UpImage,
+        left: player2LeftImage,
+        right: player2RightImage,
+        down: player2DownImage
+      }
+    });
+    
+    console.log(player1);
+    console.log(player2);
+    init();
   }
 }
 
@@ -200,14 +178,16 @@ const keys = {
     delay: false
   }
 }
-Loading();
 
 
 function init() {
+  canvas.removeEventListener('click', handleClick);
+  canvas.removeEventListener('mousemove', handleMouseMove);
+  canvas.style.cursor = 'default';
   generateWall();
   generateSand();
   console.log(map);
-  // gameLoop();
+  setInterval(gameLoop, 1000 / 60);
 }
 
 let FadeIn = 0;
@@ -216,7 +196,7 @@ let cleaned = false;
 function gameLoop() {
   if (!GameEnd) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "rgb(94, 87, 87)";
+    ctx.fillStyle = "rgb(100, 87, 87)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     drawWall();
     drawMap();
@@ -234,7 +214,7 @@ function gameLoop() {
       drawWall();
       drawMap();
       drawHUD();
-    } 
+    }
     if (FadeOut <= 0 && cleaned == false) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.globalAlpha = 1;
@@ -250,19 +230,12 @@ function gameLoop() {
     }
   }
   frames++;
-} setInterval(gameLoop, 1000 / 60)
+} 
 
 function drawHUD() {
   // Avatar
   drawAvatar();
   drawHealth();
-
-}
-
-function clearScreen() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  cleaned = true;
-
 }
 
 function drawAvatar() {
@@ -289,58 +262,58 @@ function drawAvatar() {
 }
 
 function drawHealth() {
-    for (let i = 0; i < 3; i++) {
-      if (i + 1 <= player1.health) { // full health
-        ctx.drawImage(healthImage,
-          0,
-          0,
-          healthImage.width / 2,
-          healthImage.height,
-          25 + 100 + ((healthImage.width / 2) * i) + (i * 10),
-          25,
-          40,
-          40
-        );
-      } else {
-        ctx.drawImage(healthImage,
-          1 * (healthImage.width / 2),
-          0,
-          healthImage.width / 2,
-          healthImage.height,
-          25 + 100 + ((healthImage.width / 2) * i) + (i * 10),
-          25,
-          40,
-          40
-        );
-      }
-    }
-    // player2
-    for (let i = 0; i < 3; i++) {
-      if (i + 1 <= player2.health) { // full health
-        ctx.drawImage(healthImage,
-          0,
-          0,
-          healthImage.width / 2,
-          healthImage.height,
-          canvas.width - 100 - 25 - 50 - ((healthImage.width / 2) * i) - (i * 10),
-          25,
-          40,
-          40
-        );
-      } else {
-        ctx.drawImage(healthImage,
-          1 * (healthImage.width / 2),
-          0,
-          healthImage.width / 2,
-          healthImage.height,
-          canvas.width - 100 - 25 - 50 - ((healthImage.width / 2) * i) - (i * 10),
-          25,
-          40,
-          40
-        );
-      }
+  for (let i = 0; i < 3; i++) {
+    if (i + 1 <= player1.health) { // full health
+      ctx.drawImage(healthImage,
+        0,
+        0,
+        healthImage.width / 2,
+        healthImage.height,
+        25 + 100 + ((healthImage.width / 2) * i) + (i * 10),
+        25,
+        40,
+        40
+      );
+    } else {
+      ctx.drawImage(healthImage,
+        1 * (healthImage.width / 2),
+        0,
+        healthImage.width / 2,
+        healthImage.height,
+        25 + 100 + ((healthImage.width / 2) * i) + (i * 10),
+        25,
+        40,
+        40
+      );
     }
   }
+  // player2
+  for (let i = 0; i < 3; i++) {
+    if (i + 1 <= player2.health) { // full health
+      ctx.drawImage(healthImage,
+        0,
+        0,
+        healthImage.width / 2,
+        healthImage.height,
+        canvas.width - 100 - 25 - 50 - ((healthImage.width / 2) * i) - (i * 10),
+        25,
+        40,
+        40
+      );
+    } else {
+      ctx.drawImage(healthImage,
+        1 * (healthImage.width / 2),
+        0,
+        healthImage.width / 2,
+        healthImage.height,
+        canvas.width - 100 - 25 - 50 - ((healthImage.width / 2) * i) - (i * 10),
+        25,
+        40,
+        40
+      );
+    }
+  }
+}
 
 
 function generateWall() {
