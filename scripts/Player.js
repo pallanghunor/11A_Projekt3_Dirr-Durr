@@ -14,7 +14,7 @@ class Player {
         this.moving = false;
         this.animationSpeed = 8;
         this.health = 3;
-        this.speed = 2;
+        this.speed = 2.5;
         this.powerUps = {
             bomb: 1, // level
             range: 1,
